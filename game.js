@@ -25,6 +25,7 @@ let mouse = {
 let selectedElement = "fire";
 
 let projectiles = [];
+let enemyProjectiles = [];
 let particles = [];
 
 let gameOver = false;
@@ -34,107 +35,182 @@ let currentEnemy = 0;
 let meteorUnlocked = false;
 
 let lastTime = 0;
+let attackCooldown = 0;
+let enemyAttackCooldown = 0;
+
+
+/* =====================================================
+   PODERES
+===================================================== */
 
 const elements = {
 
   fire: {
     name: "Fogo",
     color: "#ff6335",
-    damage: 20,
-    speed: 8
+    damage: 18,
+    speed: 8,
+    cooldown: 18
   },
 
   water: {
     name: "Água",
     color: "#45a8ff",
-    damage: 16,
-    speed: 9
+    damage: 14,
+    speed: 10,
+    cooldown: 14
   },
 
   air: {
     name: "Ar",
     color: "#d9eee0",
-    damage: 13,
-    speed: 11
+    damage: 11,
+    speed: 13,
+    cooldown: 9
   },
 
   earth: {
     name: "Terra",
     color: "#91c456",
-    damage: 28,
-    speed: 5
+    damage: 25,
+    speed: 5,
+    cooldown: 25
   }
 
 };
+
+
+/* =====================================================
+   10 INIMIGOS
+===================================================== */
 
 const enemyTypes = [
 
   {
     name: "Goblin da Mata",
-    hp: 80,
+    hp: 70,
     speed: 0.75,
-    size: 20,
-    color: "#7d9e43"
+    size: 19,
+    color: "#7d9e43",
+    damage: 5,
+    attackSpeed: 150
   },
 
   {
-    name: "Guardião das Sombras",
-    hp: 130,
-    speed: 0.9,
-    size: 25,
-    color: "#7653a4"
+    name: "Lobo Selvagem",
+    hp: 90,
+    speed: 1.25,
+    size: 18,
+    color: "#77746a",
+    damage: 6,
+    attackSpeed: 125
   },
 
   {
-    name: "Dragão da Floresta",
-    hp: 200,
+    name: "Espírito da Água",
+    hp: 115,
+    speed: 0.85,
+    size: 21,
+    color: "#397fbd",
+    damage: 7,
+    attackSpeed: 110
+  },
+
+  {
+    name: "Orc da Floresta",
+    hp: 145,
+    speed: 0.72,
+    size: 27,
+    color: "#54763b",
+    damage: 9,
+    attackSpeed: 100
+  },
+
+  {
+    name: "Mago Sombrio",
+    hp: 125,
     speed: 0.65,
+    size: 22,
+    color: "#744da4",
+    damage: 11,
+    attackSpeed: 80
+  },
+
+  {
+    name: "Golem de Pedra",
+    hp: 220,
+    speed: 0.48,
     size: 32,
-    color: "#bd4c3c"
+    color: "#77776d",
+    damage: 12,
+    attackSpeed: 115
+  },
+
+  {
+    name: "Dragão Verde",
+    hp: 260,
+    speed: 0.70,
+    size: 34,
+    color: "#3e914e",
+    damage: 13,
+    attackSpeed: 90
+  },
+
+  {
+    name: "Guardião da Floresta",
+    hp: 300,
+    speed: 0.82,
+    size: 36,
+    color: "#315e37",
+    damage: 14,
+    attackSpeed: 80
+  },
+
+  {
+    name: "Demônio Elemental",
+    hp: 380,
+    speed: 0.95,
+    size: 38,
+    color: "#a44242",
+    damage: 16,
+    attackSpeed: 65
+  },
+
+  {
+    name: "☄️ REI METEORO ☄️",
+    hp: 550,
+    speed: 0.85,
+    size: 45,
+    color: "#c35b2c",
+    damage: 20,
+    attackSpeed: 50
   }
 
 ];
 
+
+/* =====================================================
+   JOGADOR
+===================================================== */
+
 const player = {
+
   x: 150,
   y: HEIGHT / 2,
+
   hp: 100,
   maxHp: 100,
-  speed: 3
+
+  speed: 3.2
+
 };
 
+
+/* =====================================================
+   CRIAR INIMIGO
+===================================================== */
+
 let enemy;
-
-/* =========================
-   INICIALIZAÇÃO
-========================= */
-
-function startGame() {
-
-  player.x = 150;
-  player.y = HEIGHT / 2;
-  player.hp = 100;
-
-  currentEnemy = 0;
-  gameOver = false;
-  victory = false;
-
-  meteorUnlocked = false;
-
-  projectiles = [];
-  particles = [];
-
-  meteorButton.disabled = true;
-
-  createEnemy();
-
-  updateHUD();
-}
-
-
-/* =========================
-   CRIA INIMIGO
-========================= */
 
 function createEnemy() {
 
@@ -142,36 +218,61 @@ function createEnemy() {
 
   enemy = {
 
-    x: WIDTH - 170,
-    y: 100 + Math.random() * 330,
+    x: WIDTH - 150,
+
+    y:
+      90 +
+      Math.random() *
+      (HEIGHT - 180),
 
     hp: data.hp,
+
     maxHp: data.hp,
 
     speed: data.speed,
+
     size: data.size,
+
     color: data.color,
+
+    damage: data.damage,
+
+    attackSpeed: data.attackSpeed,
 
     hitTimer: 0
 
   };
+
+  enemyAttackCooldown = 80;
 
   enemyName.textContent = data.name;
 
   enemyCounter.textContent =
     `INIMIGO ${currentEnemy + 1} / ${enemyTypes.length}`;
 
-  message.textContent =
-    currentEnemy === 0
-      ? "O primeiro inimigo apareceu!"
-      : "⚔️ Um novo inimigo apareceu!";
+  if (currentEnemy === 0) {
+
+    message.textContent =
+      "⚔️ O primeiro inimigo apareceu!";
+
+  } else if (currentEnemy === 9) {
+
+    message.textContent =
+      "☄️ O REI METEORO chegou! Prepare-se!";
+
+  } else {
+
+    message.textContent =
+      `⚔️ Inimigo ${currentEnemy + 1}! Continue lutando!`;
+
+  }
 
 }
 
 
-/* =========================
-   ELEMENTOS
-========================= */
+/* =====================================================
+   SELECIONAR ELEMENTO
+===================================================== */
 
 function selectElement(element) {
 
@@ -193,28 +294,44 @@ function selectElement(element) {
 }
 
 
-/* =========================
-   ATAQUE
-========================= */
+/* =====================================================
+   ATAQUE DO JOGADOR
+===================================================== */
 
 function attack() {
 
-  if (gameOver || victory || !enemy) return;
+  if (
+    gameOver ||
+    victory ||
+    !enemy ||
+    attackCooldown > 0
+  ) {
+
+    return;
+
+  }
 
   const element = elements[selectedElement];
 
   const dx = mouse.x - player.x;
   const dy = mouse.y - player.y;
 
-  const distance = Math.hypot(dx, dy) || 1;
+  const distance =
+    Math.hypot(dx, dy) || 1;
 
   projectiles.push({
 
     x: player.x,
+
     y: player.y,
 
-    vx: (dx / distance) * element.speed,
-    vy: (dy / distance) * element.speed,
+    vx:
+      (dx / distance) *
+      element.speed,
+
+    vy:
+      (dy / distance) *
+      element.speed,
 
     damage: element.damage,
 
@@ -226,55 +343,79 @@ function attack() {
 
   });
 
+  attackCooldown =
+    element.cooldown;
+
 }
 
 
-/* =========================
+/* =====================================================
    METEORO
-========================= */
+===================================================== */
 
 function useMeteor() {
 
-  if (!meteorUnlocked || gameOver || victory) {
+  if (
+    !meteorUnlocked ||
+    gameOver ||
+    victory
+  ) {
+
     return;
+
   }
 
   meteorUnlocked = false;
+
   meteorButton.disabled = true;
 
   message.textContent =
-    "☄️ METEORO! O poder secreto foi lançado!";
+    "☄️ METEORO! O poder secreto atingiu o inimigo!";
 
   const targetX = enemy.x;
   const targetY = enemy.y;
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
 
     setTimeout(() => {
 
       createExplosion(
-        targetX + (Math.random() - 0.5) * 60,
-        targetY + (Math.random() - 0.5) * 60,
+
+        targetX +
+        (Math.random() - 0.5) * 80,
+
+        targetY +
+        (Math.random() - 0.5) * 80,
+
         "#ff8b2e",
+
         5
+
       );
 
-    }, i * 30);
+    }, i * 20);
 
   }
 
-  enemy.hp -= 80;
+  /* Meteor agora tira bastante vida,
+     mas não mata automaticamente os chefes */
+
+  enemy.hp -= 100;
+
+  enemy.hitTimer = 15;
 
   if (enemy.hp <= 0) {
+
     enemyDefeated();
+
   }
 
 }
 
 
-/* =========================
-   INIMIGO DERROTADO
-========================= */
+/* =====================================================
+   DERROTAR INIMIGO
+===================================================== */
 
 function enemyDefeated() {
 
@@ -282,100 +423,182 @@ function enemyDefeated() {
     enemy.x,
     enemy.y,
     "#ffd75a",
-    35
+    45
   );
 
-  if (currentEnemy < enemyTypes.length - 1) {
+  if (
+    currentEnemy <
+    enemyTypes.length - 1
+  ) {
 
     currentEnemy++;
 
+    /*
+      A cada inimigo derrotado,
+      Gregório recupera um pouco de vida.
+    */
+
+    player.hp = Math.min(
+      player.maxHp,
+      player.hp + 18
+    );
+
+    /*
+      O Meteoro fica disponível
+      depois de cada vitória.
+    */
+
     meteorUnlocked = true;
+
     meteorButton.disabled = false;
 
     message.textContent =
-      "☄️ METEORO DESBLOQUEADO! Prepare-se para o próximo inimigo!";
+      "☄️ METEORO DESBLOQUEADO! O próximo inimigo está chegando!";
 
     setTimeout(() => {
 
-      if (!gameOver && !victory) {
+      if (
+        !gameOver &&
+        !victory
+      ) {
+
         createEnemy();
+
       }
 
-    }, 1000);
+    }, 1200);
 
   } else {
 
     victory = true;
 
     message.textContent =
-      "🏆 VITÓRIA! Gregório venceu todos os inimigos!";
+      "🏆 VITÓRIA! Gregório derrotou o REI METEORO!";
 
   }
 
 }
 
 
-/* =========================
-   MOVIMENTO
-========================= */
+/* =====================================================
+   MOVIMENTO DO JOGADOR
+===================================================== */
 
 function updatePlayer(dt) {
 
   let dx = 0;
   let dy = 0;
 
-  if (keys["w"] || keys["ArrowUp"]) {
+  if (
+    keys["w"] ||
+    keys["W"] ||
+    keys["ArrowUp"]
+  ) {
+
     dy--;
+
   }
 
-  if (keys["s"] || keys["ArrowDown"]) {
+  if (
+    keys["s"] ||
+    keys["S"] ||
+    keys["ArrowDown"]
+  ) {
+
     dy++;
+
   }
 
-  if (keys["a"] || keys["ArrowLeft"]) {
+  if (
+    keys["a"] ||
+    keys["A"] ||
+    keys["ArrowLeft"]
+  ) {
+
     dx--;
+
   }
 
-  if (keys["d"] || keys["ArrowRight"]) {
+  if (
+    keys["d"] ||
+    keys["D"] ||
+    keys["ArrowRight"]
+  ) {
+
     dx++;
+
   }
 
-  if (dx !== 0 || dy !== 0) {
+  if (
+    dx !== 0 ||
+    dy !== 0
+  ) {
 
-    const distance = Math.hypot(dx, dy);
+    const distance =
+      Math.hypot(dx, dy);
 
-    player.x += (dx / distance) * player.speed * dt;
-    player.y += (dy / distance) * player.speed * dt;
+    player.x +=
+      (dx / distance) *
+      player.speed *
+      dt;
+
+    player.y +=
+      (dy / distance) *
+      player.speed *
+      dt;
 
   }
 
   player.x = Math.max(
     30,
-    Math.min(WIDTH - 30, player.x)
+    Math.min(
+      WIDTH - 30,
+      player.x
+    )
   );
 
   player.y = Math.max(
     55,
-    Math.min(HEIGHT - 35, player.y)
+    Math.min(
+      HEIGHT - 35,
+      player.y
+    )
   );
 
 }
 
 
-/* =========================
+/* =====================================================
    MOVIMENTO DO INIMIGO
-========================= */
+===================================================== */
 
 function updateEnemy(dt) {
 
-  if (!enemy || gameOver || victory) return;
+  if (
+    !enemy ||
+    gameOver ||
+    victory
+  ) {
 
-  const dx = player.x - enemy.x;
-  const dy = player.y - enemy.y;
+    return;
 
-  const distance = Math.hypot(dx, dy) || 1;
+  }
 
-  if (distance > 75) {
+  const dx =
+    player.x - enemy.x;
+
+  const dy =
+    player.y - enemy.y;
+
+  const distance =
+    Math.hypot(dx, dy) || 1;
+
+
+  /*
+    Alguns inimigos perseguem rapidamente.
+  */
+
+  if (distance > 85) {
 
     enemy.x +=
       (dx / distance) *
@@ -387,58 +610,123 @@ function updateEnemy(dt) {
       enemy.speed *
       dt;
 
-  } else {
+  }
 
-    if (Math.random() < 0.018 * dt) {
 
-      player.hp -= 7;
+  /*
+    Ataques de perto
+  */
 
-      createExplosion(
-        player.x,
-        player.y,
-        "#d94b42",
-        5
-      );
+  if (
+    distance <= 85 &&
+    enemyAttackCooldown <= 0
+  ) {
 
-      if (player.hp <= 0) {
+    player.hp -= enemy.damage;
 
-        player.hp = 0;
+    createExplosion(
+      player.x,
+      player.y,
+      "#d94b42",
+      8
+    );
 
-        gameOver = true;
+    enemyAttackCooldown =
+      enemy.attackSpeed;
 
-        message.textContent =
-          "💀 Você foi derrotado! Pressione R para tentar novamente.";
+    if (player.hp <= 0) {
 
-      }
+      player.hp = 0;
+
+      gameOver = true;
+
+      message.textContent =
+        "💀 Gregório foi derrotado! Pressione R para tentar novamente.";
 
     }
 
   }
 
+
+  /*
+    Ataques à distância
+    para inimigos mais avançados.
+  */
+
+  if (
+    currentEnemy >= 4 &&
+    distance > 120 &&
+    enemyAttackCooldown <= 0
+  ) {
+
+    const speed = 4;
+
+    enemyProjectiles.push({
+
+      x: enemy.x,
+
+      y: enemy.y,
+
+      vx:
+        (dx / distance) *
+        speed,
+
+      vy:
+        (dy / distance) *
+        speed,
+
+      damage:
+        enemy.damage,
+
+      life: 150,
+
+      color:
+        enemy.color
+
+    });
+
+    enemyAttackCooldown =
+      enemy.attackSpeed;
+
+  }
+
+  enemyAttackCooldown -= dt;
+
   if (enemy.hitTimer > 0) {
+
     enemy.hitTimer -= dt;
+
   }
 
 }
 
 
-/* =========================
-   PROJÉTEIS
-========================= */
+/* =====================================================
+   PROJÉTEIS DO JOGADOR
+===================================================== */
 
 function updateProjectiles(dt) {
 
-  for (const projectile of projectiles) {
+  for (
+    const projectile
+    of projectiles
+  ) {
 
-    projectile.x += projectile.vx * dt;
-    projectile.y += projectile.vy * dt;
+    projectile.x +=
+      projectile.vx * dt;
+
+    projectile.y +=
+      projectile.vy * dt;
 
     projectile.life -= dt;
 
-    const distance = Math.hypot(
-      projectile.x - enemy.x,
-      projectile.y - enemy.y
-    );
+
+    const distance =
+      Math.hypot(
+        projectile.x - enemy.x,
+        projectile.y - enemy.y
+      );
+
 
     if (
       distance <
@@ -446,7 +734,8 @@ function updateProjectiles(dt) {
       projectile.life > 0
     ) {
 
-      enemy.hp -= projectile.damage;
+      enemy.hp -=
+        projectile.damage;
 
       enemy.hitTimer = 7;
 
@@ -459,52 +748,157 @@ function updateProjectiles(dt) {
         7
       );
 
+
       if (enemy.hp <= 0) {
+
         enemyDefeated();
+
       }
 
     }
 
   }
 
-  projectiles = projectiles.filter(projectile =>
 
-    projectile.life > 0 &&
-    projectile.x > -30 &&
-    projectile.x < WIDTH + 30 &&
-    projectile.y > -30 &&
-    projectile.y < HEIGHT + 30
+  projectiles =
+    projectiles.filter(
+      projectile =>
 
-  );
+        projectile.life > 0 &&
+
+        projectile.x > -30 &&
+        projectile.x < WIDTH + 30 &&
+
+        projectile.y > -30 &&
+        projectile.y < HEIGHT + 30
+
+    );
 
 }
 
 
-/* =========================
+/* =====================================================
+   PROJÉTEIS DOS INIMIGOS
+===================================================== */
+
+function updateEnemyProjectiles(dt) {
+
+  for (
+    const projectile
+    of enemyProjectiles
+  ) {
+
+    projectile.x +=
+      projectile.vx * dt;
+
+    projectile.y +=
+      projectile.vy * dt;
+
+    projectile.life -= dt;
+
+
+    const distance =
+      Math.hypot(
+        projectile.x - player.x,
+        projectile.y - player.y
+      );
+
+
+    if (
+      distance < 18 &&
+      projectile.life > 0
+    ) {
+
+      player.hp -=
+        projectile.damage;
+
+      projectile.life = 0;
+
+      createExplosion(
+        player.x,
+        player.y,
+        "#e55a48",
+        6
+      );
+
+
+      if (player.hp <= 0) {
+
+        player.hp = 0;
+
+        gameOver = true;
+
+        message.textContent =
+          "💀 Gregório foi derrotado! Pressione R.";
+
+      }
+
+    }
+
+  }
+
+
+  enemyProjectiles =
+    enemyProjectiles.filter(
+      projectile =>
+
+        projectile.life > 0 &&
+
+        projectile.x > -30 &&
+        projectile.x < WIDTH + 30 &&
+
+        projectile.y > -30 &&
+        projectile.y < HEIGHT + 30
+
+    );
+
+}
+
+
+/* =====================================================
    PARTÍCULAS
-========================= */
+===================================================== */
 
-function createExplosion(x, y, color, amount) {
+function createExplosion(
+  x,
+  y,
+  color,
+  amount
+) {
 
-  for (let i = 0; i < amount; i++) {
+  for (
+    let i = 0;
+    i < amount;
+    i++
+  ) {
 
     const angle =
-      Math.random() * Math.PI * 2;
+      Math.random() *
+      Math.PI *
+      2;
 
     const speed =
-      1 + Math.random() * 3;
+      1 +
+      Math.random() * 3;
 
     particles.push({
 
       x,
       y,
 
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+      vx:
+        Math.cos(angle) *
+        speed,
+
+      vy:
+        Math.sin(angle) *
+        speed,
 
       color,
 
-      life: 25 + Math.random() * 30
+      life:
+        25 +
+        Math.random() * 30
 
     });
 
@@ -515,36 +909,53 @@ function createExplosion(x, y, color, amount) {
 
 function updateParticles(dt) {
 
-  for (const particle of particles) {
+  for (
+    const particle
+    of particles
+  ) {
 
-    particle.x += particle.vx * dt;
-    particle.y += particle.vy * dt;
+    particle.x +=
+      particle.vx * dt;
 
-    particle.vy += 0.04 * dt;
+    particle.y +=
+      particle.vy * dt;
+
+    particle.vy +=
+      0.04 * dt;
 
     particle.life -= dt;
 
   }
 
-  particles = particles.filter(
-    particle => particle.life > 0
-  );
+  particles =
+    particles.filter(
+      particle =>
+        particle.life > 0
+    );
 
 }
 
 
-/* =========================
-   DESENHO
-========================= */
+/* =====================================================
+   FLORESTA
+===================================================== */
 
 function drawForest() {
 
   ctx.fillStyle = "#18331d";
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  ctx.fillRect(
+    0,
+    0,
+    WIDTH,
+    HEIGHT
+  );
+
 
   /* Caminho */
 
   ctx.fillStyle = "#31572c";
+
   ctx.fillRect(
     0,
     HEIGHT / 2 - 40,
@@ -552,37 +963,71 @@ function drawForest() {
     80
   );
 
+
   /* Grama */
 
   ctx.fillStyle = "#244b27";
 
-  for (let i = 0; i < 70; i++) {
+  for (
+    let i = 0;
+    i < 80;
+    i++
+  ) {
 
-    const x = (i * 137) % WIDTH;
-    const y = 50 + ((i * 83) % 440);
+    const x =
+      (i * 137) %
+      WIDTH;
 
-    ctx.fillRect(x, y, 5, 5);
-    ctx.fillRect(x + 6, y + 4, 4, 3);
+    const y =
+      50 +
+      ((i * 83) % 440);
+
+    ctx.fillRect(
+      x,
+      y,
+      5,
+      5
+    );
+
+    ctx.fillRect(
+      x + 6,
+      y + 4,
+      4,
+      3
+    );
 
   }
+
 
   /* Árvores */
 
-  for (let i = 0; i < 12; i++) {
+  for (
+    let i = 0;
+    i < 13;
+    i++
+  ) {
 
     const treeX =
-      30 + i * 85;
+      30 +
+      i * 82;
 
     const treeY =
-      55 + (i % 4) * 100;
+      55 +
+      (i % 4) * 100;
 
-    drawTree(treeX, treeY);
+    drawTree(
+      treeX,
+      treeY
+    );
 
   }
 
+
   /* Bordas */
 
-  ctx.strokeStyle = "#80683e";
+  ctx.strokeStyle =
+    "#80683e";
+
   ctx.lineWidth = 5;
 
   ctx.strokeRect(
@@ -595,9 +1040,17 @@ function drawForest() {
 }
 
 
-function drawTree(x, y) {
+/* =====================================================
+   ÁRVORE
+===================================================== */
 
-  ctx.fillStyle = "#4a3020";
+function drawTree(
+  x,
+  y
+) {
+
+  ctx.fillStyle =
+    "#4a3020";
 
   ctx.fillRect(
     x - 5,
@@ -606,7 +1059,8 @@ function drawTree(x, y) {
     30
   );
 
-  ctx.fillStyle = "#173c22";
+  ctx.fillStyle =
+    "#173c22";
 
   ctx.fillRect(
     x - 22,
@@ -615,7 +1069,8 @@ function drawTree(x, y) {
     27
   );
 
-  ctx.fillStyle = "#28602e";
+  ctx.fillStyle =
+    "#28602e";
 
   ctx.fillRect(
     x - 29,
@@ -627,9 +1082,9 @@ function drawTree(x, y) {
 }
 
 
-/* =========================
-   DESENHAR PLAYER
-========================= */
+/* =====================================================
+   JOGADOR
+===================================================== */
 
 function drawPlayer() {
 
@@ -642,9 +1097,11 @@ function drawPlayer() {
     6
   );
 
+
   /* Cabeça */
 
-  ctx.fillStyle = "#d8c09b";
+  ctx.fillStyle =
+    "#d8c09b";
 
   ctx.fillRect(
     player.x - 9,
@@ -653,9 +1110,11 @@ function drawPlayer() {
     15
   );
 
+
   /* Corpo */
 
-  ctx.fillStyle = "#4d72b9";
+  ctx.fillStyle =
+    "#4d72b9";
 
   ctx.fillRect(
     player.x - 12,
@@ -664,9 +1123,11 @@ function drawPlayer() {
     22
   );
 
+
   /* Chapéu */
 
-  ctx.fillStyle = "#d3a85e";
+  ctx.fillStyle =
+    "#d3a85e";
 
   ctx.fillRect(
     player.x - 16,
@@ -675,9 +1136,11 @@ function drawPlayer() {
     5
   );
 
+
   /* Olhos */
 
-  ctx.fillStyle = "#201a14";
+  ctx.fillStyle =
+    "#201a14";
 
   ctx.fillRect(
     player.x - 6,
@@ -693,9 +1156,15 @@ function drawPlayer() {
     3
   );
 
-  ctx.fillStyle = "#f7edca";
-  ctx.font = "bold 12px monospace";
-  ctx.textAlign = "center";
+
+  ctx.fillStyle =
+    "#f7edca";
+
+  ctx.font =
+    "bold 12px monospace";
+
+  ctx.textAlign =
+    "center";
 
   ctx.fillText(
     elements[selectedElement].name,
@@ -703,18 +1172,20 @@ function drawPlayer() {
     player.y + 38
   );
 
-  ctx.textAlign = "left";
+  ctx.textAlign =
+    "left";
 
 }
 
 
-/* =========================
-   DESENHAR INIMIGO
-========================= */
+/* =====================================================
+   INIMIGO
+===================================================== */
 
 function drawEnemy() {
 
-  ctx.fillStyle = "#111";
+  ctx.fillStyle =
+    "#111";
 
   ctx.fillRect(
     enemy.x - enemy.size,
@@ -722,6 +1193,7 @@ function drawEnemy() {
     enemy.size * 2,
     7
   );
+
 
   ctx.fillStyle =
     enemy.hitTimer > 0
@@ -735,74 +1207,108 @@ function drawEnemy() {
     enemy.size * 2
   );
 
+
   /* Olhos */
 
-  ctx.fillStyle = "#211915";
+  ctx.fillStyle =
+    "#211915";
 
   ctx.fillRect(
-    enemy.x - enemy.size * 0.5,
-    enemy.y - enemy.size * 0.35,
+    enemy.x -
+      enemy.size * 0.5,
+
+    enemy.y -
+      enemy.size * 0.35,
+
     5,
     5
   );
 
   ctx.fillRect(
-    enemy.x + enemy.size * 0.3,
-    enemy.y - enemy.size * 0.35,
+    enemy.x +
+      enemy.size * 0.3,
+
+    enemy.y -
+      enemy.size * 0.35,
+
     5,
     5
   );
+
 
   /* Nome */
 
-  ctx.textAlign = "center";
+  ctx.textAlign =
+    "center";
 
-  ctx.fillStyle = "#f2e3ad";
-  ctx.font = "bold 13px monospace";
+  ctx.fillStyle =
+    "#f2e3ad";
+
+  ctx.font =
+    "bold 13px monospace";
 
   ctx.fillText(
-    enemy.name,
+    enemyTypes[currentEnemy].name,
     enemy.x,
-    enemy.y - enemy.size - 20
+    enemy.y -
+      enemy.size -
+      20
   );
 
-  /* Barra de vida */
 
-  ctx.fillStyle = "#351b1b";
+  /* Vida */
+
+  ctx.fillStyle =
+    "#351b1b";
 
   ctx.fillRect(
-    enemy.x - 35,
-    enemy.y - enemy.size - 12,
-    70,
+    enemy.x - 40,
+    enemy.y -
+      enemy.size -
+      12,
+    80,
     7
   );
 
-  ctx.fillStyle = "#d84b42";
+  ctx.fillStyle =
+    "#d84b42";
 
   ctx.fillRect(
-    enemy.x - 35,
-    enemy.y - enemy.size - 12,
-    70 * Math.max(
-      0,
-      enemy.hp / enemy.maxHp
-    ),
+    enemy.x - 40,
+    enemy.y -
+      enemy.size -
+      12,
+
+    80 *
+      Math.max(
+        0,
+        enemy.hp /
+          enemy.maxHp
+      ),
+
     7
   );
 
-  ctx.textAlign = "left";
+
+  ctx.textAlign =
+    "left";
 
 }
 
 
-/* =========================
-   DESENHAR MAGIAS
-========================= */
+/* =====================================================
+   MAGIAS
+===================================================== */
 
 function drawProjectiles() {
 
-  for (const projectile of projectiles) {
+  for (
+    const projectile
+    of projectiles
+  ) {
 
-    ctx.fillStyle = projectile.color;
+    ctx.fillStyle =
+      projectile.color;
 
     ctx.fillRect(
       projectile.x - 6,
@@ -811,9 +1317,14 @@ function drawProjectiles() {
       12
     );
 
-    if (projectile.element === "fire") {
 
-      ctx.fillStyle = "#ffd15a";
+    if (
+      projectile.element ===
+      "fire"
+    ) {
+
+      ctx.fillStyle =
+        "#ffd15a";
 
       ctx.fillRect(
         projectile.x - 3,
@@ -824,9 +1335,14 @@ function drawProjectiles() {
 
     }
 
-    if (projectile.element === "water") {
 
-      ctx.fillStyle = "#b7e4ff";
+    if (
+      projectile.element ===
+      "water"
+    ) {
+
+      ctx.fillStyle =
+        "#b7e4ff";
 
       ctx.fillRect(
         projectile.x - 3,
@@ -837,9 +1353,14 @@ function drawProjectiles() {
 
     }
 
-    if (projectile.element === "earth") {
 
-      ctx.fillStyle = "#d2e39c";
+    if (
+      projectile.element ===
+      "earth"
+    ) {
+
+      ctx.fillStyle =
+        "#d2e39c";
 
       ctx.fillRect(
         projectile.x - 9,
@@ -852,18 +1373,42 @@ function drawProjectiles() {
 
   }
 
+
+  /* Ataques dos inimigos */
+
+  for (
+    const projectile
+    of enemyProjectiles
+  ) {
+
+    ctx.fillStyle =
+      projectile.color;
+
+    ctx.fillRect(
+      projectile.x - 7,
+      projectile.y - 7,
+      14,
+      14
+    );
+
+  }
+
 }
 
 
-/* =========================
+/* =====================================================
    PARTÍCULAS
-========================= */
+===================================================== */
 
 function drawParticles() {
 
-  for (const particle of particles) {
+  for (
+    const particle
+    of particles
+  ) {
 
-    ctx.fillStyle = particle.color;
+    ctx.fillStyle =
+      particle.color;
 
     ctx.fillRect(
       particle.x,
@@ -877,16 +1422,17 @@ function drawParticles() {
 }
 
 
-/* =========================
+/* =====================================================
    HUD
-========================= */
+===================================================== */
 
 function updateHUD() {
 
   const percentage =
     Math.max(
       0,
-      player.hp / player.maxHp
+      player.hp /
+        player.maxHp
     ) * 100;
 
   healthBar.style.width =
@@ -898,17 +1444,35 @@ function updateHUD() {
 }
 
 
-/* =========================
-   LOOP
-========================= */
+/* =====================================================
+   LOOP DO JOGO
+===================================================== */
 
 function update(dt) {
 
-  if (gameOver || victory) return;
+  if (
+    gameOver ||
+    victory
+  ) {
+
+    return;
+
+  }
+
+  if (attackCooldown > 0) {
+
+    attackCooldown -= dt;
+
+  }
 
   updatePlayer(dt);
+
   updateEnemy(dt);
+
   updateProjectiles(dt);
+
+  updateEnemyProjectiles(dt);
+
   updateParticles(dt);
 
   updateHUD();
@@ -921,15 +1485,23 @@ function draw() {
   drawForest();
 
   drawProjectiles();
+
   drawParticles();
 
   drawEnemy();
+
   drawPlayer();
 
-  if (gameOver || victory) {
+
+  /* Tela final */
+
+  if (
+    gameOver ||
+    victory
+  ) {
 
     ctx.fillStyle =
-      "rgba(0, 0, 0, 0.65)";
+      "rgba(0, 0, 0, 0.68)";
 
     ctx.fillRect(
       0,
@@ -938,7 +1510,9 @@ function draw() {
       HEIGHT
     );
 
-    ctx.textAlign = "center";
+    ctx.textAlign =
+      "center";
+
 
     ctx.fillStyle =
       victory
@@ -949,25 +1523,34 @@ function draw() {
       "bold 36px monospace";
 
     ctx.fillText(
-      victory ? "🏆 VITÓRIA!" : "💀 DERROTA!",
+      victory
+        ? "🏆 VITÓRIA!"
+        : "💀 DERROTA!",
       WIDTH / 2,
       HEIGHT / 2
     );
 
-    ctx.fillStyle = "#fff";
+
+    ctx.fillStyle =
+      "#fff";
 
     ctx.font =
       "bold 15px monospace";
 
     ctx.fillText(
+
       victory
-        ? "A Floresta Mágica foi salva!"
+        ? "Gregório salvou a Floresta Mágica!"
         : "Pressione R para tentar novamente",
+
       WIDTH / 2,
-      HEIGHT / 2 + 35
+      HEIGHT / 2 + 38
+
     );
 
-    ctx.textAlign = "left";
+
+    ctx.textAlign =
+      "left";
 
   }
 
@@ -979,22 +1562,26 @@ function gameLoop(time) {
   const dt =
     Math.min(
       2,
-      (time - lastTime) / 16.67 || 1
+      (time - lastTime) /
+        16.67 || 1
     );
 
   lastTime = time;
 
   update(dt);
+
   draw();
 
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(
+    gameLoop
+  );
 
 }
 
 
-/* =========================
+/* =====================================================
    TECLADO
-========================= */
+===================================================== */
 
 window.addEventListener(
   "keydown",
@@ -1002,26 +1589,33 @@ window.addEventListener(
 
     keys[event.key] = true;
 
+
     if (
-      ["1", "2", "3", "4"].includes(event.key)
+      ["1", "2", "3", "4"]
+        .includes(event.key)
     ) {
 
-      const elementsList = [
+      const elementList = [
+
         "fire",
         "water",
         "air",
         "earth"
+
       ];
 
       selectElement(
-        elementsList[
+        elementList[
           Number(event.key) - 1
         ]
       );
 
     }
 
-    if (event.code === "Space") {
+
+    if (
+      event.code === "Space"
+    ) {
 
       event.preventDefault();
 
@@ -1029,13 +1623,21 @@ window.addEventListener(
 
     }
 
-    if (event.key.toLowerCase() === "m") {
+
+    if (
+      event.key.toLowerCase() ===
+      "m"
+    ) {
 
       useMeteor();
 
     }
 
-    if (event.key.toLowerCase() === "r") {
+
+    if (
+      event.key.toLowerCase() ===
+      "r"
+    ) {
 
       startGame();
 
@@ -1055,9 +1657,9 @@ window.addEventListener(
 );
 
 
-/* =========================
+/* =====================================================
    MOUSE
-========================= */
+===================================================== */
 
 function updateMouse(event) {
 
@@ -1065,13 +1667,15 @@ function updateMouse(event) {
     canvas.getBoundingClientRect();
 
   mouse.x =
-    (event.clientX - rect.left)
-    * WIDTH /
+    (event.clientX -
+      rect.left) *
+    WIDTH /
     rect.width;
 
   mouse.y =
-    (event.clientY - rect.top)
-    * HEIGHT /
+    (event.clientY -
+      rect.top) *
+    HEIGHT /
     rect.height;
 
 }
@@ -1095,12 +1699,14 @@ canvas.addEventListener(
 );
 
 
-/* =========================
-   BOTÕES DE ELEMENTOS
-========================= */
+/* =====================================================
+   BOTÕES DOS ELEMENTOS
+===================================================== */
 
 document
-  .querySelectorAll(".power[data-element]")
+  .querySelectorAll(
+    ".power[data-element]"
+  )
   .forEach(button => {
 
     button.addEventListener(
@@ -1117,9 +1723,9 @@ document
   });
 
 
-/* =========================
+/* =====================================================
    BOTÕES
-========================= */
+===================================================== */
 
 attackButton.addEventListener(
   "click",
@@ -1137,16 +1743,19 @@ restartButton.addEventListener(
 );
 
 
-/* =========================
+/* =====================================================
    CONTROLES MOBILE
-========================= */
+===================================================== */
 
 document
-  .querySelectorAll(".dpad button")
+  .querySelectorAll(
+    ".dpad button"
+  )
   .forEach(button => {
 
     const key =
       button.dataset.key;
+
 
     button.addEventListener(
       "pointerdown",
@@ -1159,6 +1768,7 @@ document
       }
     );
 
+
     button.addEventListener(
       "pointerup",
       () => {
@@ -1168,6 +1778,7 @@ document
       }
     );
 
+
     button.addEventListener(
       "pointercancel",
       () => {
@@ -1176,6 +1787,7 @@ document
 
       }
     );
+
 
     button.addEventListener(
       "pointerleave",
@@ -1189,9 +1801,9 @@ document
   });
 
 
-/* =========================
+/* =====================================================
    TELA CHEIA
-========================= */
+===================================================== */
 
 fullscreenBtn.addEventListener(
   "click",
@@ -1199,13 +1811,18 @@ fullscreenBtn.addEventListener(
 
     try {
 
-      if (!document.fullscreenElement) {
+      if (
+        !document.fullscreenElement
+      ) {
 
-        await document.documentElement.requestFullscreen();
+        await document
+          .documentElement
+          .requestFullscreen();
 
       } else {
 
-        await document.exitFullscreen();
+        await document
+          .exitFullscreen();
 
       }
 
@@ -1235,10 +1852,42 @@ document.addEventListener(
 );
 
 
-/* =========================
-   INICIAR
-========================= */
+/* =====================================================
+   INICIAR JOGO
+===================================================== */
+
+function startGame() {
+
+  player.x = 150;
+  player.y = HEIGHT / 2;
+
+  player.hp = 100;
+
+  currentEnemy = 0;
+
+  gameOver = false;
+  victory = false;
+
+  meteorUnlocked = false;
+
+  attackCooldown = 0;
+  enemyAttackCooldown = 0;
+
+  projectiles = [];
+  enemyProjectiles = [];
+  particles = [];
+
+  meteorButton.disabled = true;
+
+  createEnemy();
+
+  updateHUD();
+
+}
+
 
 startGame();
 
-requestAnimationFrame(gameLoop);
+requestAnimationFrame(
+  gameLoop
+);
