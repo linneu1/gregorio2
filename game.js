@@ -167,7 +167,7 @@ const enemyTypes = [
   },
 
   {
-    name: "Demônio Elemental",
+    name: "Goblin Elemental",
     hp: 380,
     speed: 0.95,
     size: 38,
