@@ -48,7 +48,7 @@ const elements = {
   fire: {
     name: "Fogo",
     color: "#ff6335",
-    damage: 18,
+    damage: 15,
     speed: 8,
     cooldown: 18
   },
@@ -56,7 +56,7 @@ const elements = {
   water: {
     name: "Água",
     color: "#45a8ff",
-    damage: 14,
+    damage: 12,
     speed: 10,
     cooldown: 14
   },
@@ -64,7 +64,7 @@ const elements = {
   air: {
     name: "Ar",
     color: "#d9eee0",
-    damage: 11,
+    damage: 9,
     speed: 13,
     cooldown: 9
   },
@@ -72,7 +72,7 @@ const elements = {
   earth: {
     name: "Terra",
     color: "#91c456",
-    damage: 25,
+    damage: 13,
     speed: 5,
     cooldown: 25
   }
