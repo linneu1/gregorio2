@@ -48,7 +48,7 @@ const elements = {
   fire: {
     name: "Fogo",
     color: "#ff6335",
-    damage: 15,
+    damage: 20,
     speed: 8,
     cooldown: 18
   },
@@ -66,7 +66,7 @@ const elements = {
     color: "#d9eee0",
     damage: 9,
     speed: 13,
-    cooldown: 9
+    cooldown: 3
   },
 
   earth: {
@@ -88,7 +88,7 @@ const enemyTypes = [
 
   {
     name: "Goblin da Mata",
-    hp: 70,
+    hp: 100,
     speed: 0.75,
     size: 19,
     color: "#7d9e43",
@@ -98,7 +98,7 @@ const enemyTypes = [
 
   {
     name: "Lobo Selvagem",
-    hp: 90,
+    hp: 200,
     speed: 1.25,
     size: 18,
     color: "#77746a",
@@ -128,7 +128,7 @@ const enemyTypes = [
 
   {
     name: "Mago Sombrio",
-    hp: 125,
+    hp: 300,
     speed: 0.65,
     size: 22,
     color: "#744da4",
@@ -138,7 +138,7 @@ const enemyTypes = [
 
   {
     name: "Golem de Pedra",
-    hp: 220,
+    hp: 350,
     speed: 0.48,
     size: 32,
     color: "#77776d",
@@ -178,7 +178,7 @@ const enemyTypes = [
 
   {
     name: "☄️ REI METEORO ☄️",
-    hp: 550,
+    hp: 750,
     speed: 0.85,
     size: 45,
     color: "#c35b2c",
@@ -641,7 +641,7 @@ function updateEnemy(dt) {
       gameOver = true;
 
       message.textContent =
-        "💀 Gregório foi derrotado! Pressione R para tentar novamente.";
+        " Gregório foi derrotado! Pressione R para tentar novamente.";
 
     }
 
