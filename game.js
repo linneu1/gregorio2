@@ -48,7 +48,7 @@ const elements = {
   fire: {
     name: "Fogo",
     color: "#ff6335",
-    damage: 20,
+    damage: 25,
     speed: 8,
     cooldown: 18
   },
