@@ -178,7 +178,7 @@ const enemyTypes = [
 
   {
     name: "☄️ REI METEORO ☄️",
-    hp: 750,
+    hp: 1500,
     speed: 0.85,
     size: 45,
     color: "#c35b2c",
